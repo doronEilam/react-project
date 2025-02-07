@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Grid, Container, Typography, Box, Alert } from "@mui/material";
+import { Grid, Container, Typography, Box, Fab } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import { useNavigate } from "react-router-dom";
 import BusinessCard from "../components/BusinessCard";
 import { useSearch } from "../contexts/SearchContext";
 import axios from "axios";
@@ -9,7 +11,8 @@ export default function MyCards() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const { searchQuery } = useSearch();
-  console.log("from my card", searchQuery);
+  const navigate = useNavigate();
+
   const handleGetAllCards = async () => {
     try {
       setIsLoading(true);
@@ -77,9 +80,9 @@ export default function MyCards() {
     return (
       <Container>
         <Box sx={{ py: 4 }}>
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Typography color="error" sx={{ mb: 2 }}>
             {error}
-          </Alert>
+          </Typography>
           <Typography variant="body1">
             Please try refreshing the page or logging in again.
           </Typography>
@@ -101,7 +104,7 @@ export default function MyCards() {
   }
 
   return (
-    <Container sx={{ py: 4 }}>
+    <Container sx={{ py: 4, position: "relative", minHeight: "80vh" }}>
       <Typography variant="h4" gutterBottom>
         My Cards
       </Typography>
@@ -116,11 +119,24 @@ export default function MyCards() {
         <Grid container spacing={2}>
           {filteredCards.map((card) => (
             <Grid item xs={12} sm={6} md={4} key={card._id}>
-              <BusinessCard card={card} onUpdate={handleGetAllCards} />
+              <BusinessCard card={card} onUpdate={handleGetAllCards} isMyCard={true} />
             </Grid>
           ))}
         </Grid>
       )}
+
+      <Fab
+        color="primary"
+        aria-label="add"
+        sx={{
+          position: "fixed",
+          right: { xs: 16, md: 24 },
+          bottom: { xs: 16, md: 100 },
+        }}
+        onClick={() => navigate("/CreatCard")}
+      >
+        <AddIcon />
+      </Fab>
     </Container>
   );
 }

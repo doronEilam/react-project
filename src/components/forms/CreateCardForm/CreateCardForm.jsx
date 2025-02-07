@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -14,13 +14,52 @@ import { cardsService } from "../../../services/cardsService";
 import { CreateCardFormFields } from "./CreateCardFormFields";
 import { INITIAL_FORM_STATE, formatCardData } from "./formUtils";
 import { validateForm } from "./validations";
+import axios from "axios";
 
-const CreateCardForm = () => {
+const CreateCardForm = ({ cardId, isEditMode }) => {
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchCardData = async () => {
+      if (isEditMode && cardId) {
+        try {
+          setIsLoading(true);
+          const response = await axios.get(
+            `https://monkfish-app-z9uza.ondigitalocean.app/bcard2/cards/${cardId}`
+          );
+          
+          const card = response.data;
+          setFormData({
+            title: card.title,
+            subtitle: card.subtitle,
+            description: card.description,
+            phone: card.phone,
+            email: card.email,
+            web: card.web,
+            imageUrl: card.image.url,
+            imageAlt: card.image.alt,
+            state: card.address.state,
+            country: card.address.country,
+            city: card.address.city,
+            street: card.address.street,
+            houseNumber: card.address.houseNumber,
+            zip: card.address.zip,
+          });
+        } catch (error) {
+          setError("Failed to fetch card data");
+          console.error("Error fetching card:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchCardData();
+  }, [isEditMode, cardId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,17 +78,16 @@ const CreateCardForm = () => {
   const handleCancel = () => {
     if (
       window.confirm(
-        "Are you sure you want to cancel? All entered data will be lost"
+        "Are you sure you want to cancel? All changes will be lost"
       )
     ) {
-      setFormData(INITIAL_FORM_STATE);
-      navigate("/");
+      navigate("/my-cards");
     }
   };
 
   const handleReset = () => {
     if (window.confirm("Are you sure you want to reset the form?")) {
-      setFormData(INITIAL_FORM_STATE);
+      setFormData(isEditMode ? formData : INITIAL_FORM_STATE);
       setFormErrors({});
     }
   };
@@ -66,18 +104,33 @@ const CreateCardForm = () => {
 
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Please log in to create a card");
+      setError("Please log in to continue");
       return;
     }
 
     try {
       setIsLoading(true);
       const cardData = formatCardData(formData);
-      await cardsService.createCard(cardData);
-      alert("Card created successfully!");
-      navigate("/");
+
+      if (isEditMode) {
+        await axios.put(
+          `https://monkfish-app-z9uza.ondigitalocean.app/bcard2/cards/${cardId}`,
+          cardData,
+          {
+            headers: {
+              'x-auth-token': token
+            }
+          }
+        );
+        alert("Card updated successfully!");
+      } else {
+        await cardsService.createCard(cardData);
+        alert("Card created successfully!");
+      }
+      
+      navigate("/my-cards");
     } catch (error) {
-      setError(error.message || "Failed to create card");
+      setError(error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} card`);
     } finally {
       setIsLoading(false);
     }
@@ -131,7 +184,13 @@ const CreateCardForm = () => {
                   type="submit"
                   disabled={isLoading}
                 >
-                  {isLoading ? <CircularProgress size={24} /> : "Create Card"}
+                  {isLoading ? (
+                    <CircularProgress size={24} />
+                  ) : isEditMode ? (
+                    "Save Changes"
+                  ) : (
+                    "Create Card"
+                  )}
                 </Button>
               </Box>
             </Box>

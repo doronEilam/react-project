@@ -26,7 +26,8 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/Register" element={<Register />} />
               <Route path="/LogIn" element={<LogIn />} />
-              <Route path="/CreatCard" element={<CreatCard />} />
+              <Route path="/CreatCard" element={<CreatCard mode="creact" />} />
+              <Route path="/EditCard/:id" element={<CreatCard mode="edit" />} />
               <Route path="/Favorite" element={<Favorite />} />
               <Route path="/MyCards" element={<MyCards />} />
               <Route path="*" element={<NotFound />} />
